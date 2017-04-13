@@ -163,14 +163,13 @@ void StepTicker::step_tick (void)
         // Run once at start of block: increase velocity if pressure advance is enabled
         if((current_tick == 0) && (motor[m]->get_pressure_advance() != 0.0f)){
             //  advance_speed = k * acceleration_change
-            current_block->tick_info[m].steps_per_tick += motor[m]->get_pressure_advance() * current_block->tick_info[m].acceleration_change;
+            current_block->tick_info[m].steps_per_tick += (int64_t)round(motor[m]->get_pressure_advance() * current_block->tick_info[m].acceleration_change);
         }
 
         if(current_tick == current_block->tick_info[m].next_accel_event) {
             if(current_tick == current_block->accelerate_until) { // We are done accelerating, deceleration becomes 0 : plateau
-
                 if(motor[m]->get_pressure_advance() != 0.0f){ //  Decrease velocity by the pressure advance value
-					current_block->tick_info[m].steps_per_tick -= motor[m]->get_pressure_advance() * current_block->tick_info[m].acceleration_change;
+					current_block->tick_info[m].steps_per_tick -= (int64_t)round(motor[m]->get_pressure_advance() * current_block->tick_info[m].acceleration_change);
 				}
 
                 current_block->tick_info[m].acceleration_change = 0;
@@ -188,16 +187,11 @@ void StepTicker::step_tick (void)
 
                 if(motor[m]->get_pressure_advance() != 0.0f){ //  Decrease velocity by the pressure advance value.  Note that deceleration change is negative if slowing down
 	                // retard_speed = k * deceleration_change
-                    current_block->tick_info[m].steps_per_tick += motor[m]->get_pressure_advance() * current_block->tick_info[m].deceleration_change;
+                    current_block->tick_info[m].steps_per_tick += (int64_t)round(motor[m]->get_pressure_advance() * current_block->tick_info[m].deceleration_change);
                 }
             }
         }
 
-
-        if((current_block->tick_info[m].steps_per_tick <= 0) && (motor[m]->get_pressure_advance() != 0.0f)) {
-            motor[m]->set_direction(!current_block->direction_bits[m]);
-            current_block->tick_info[m].steps_per_tick = 0 - current_block->tick_info[m].steps_per_tick;
-        }
 
         // protect against rounding errors and such
         if(current_block->tick_info[m].steps_per_tick <= 0) {
