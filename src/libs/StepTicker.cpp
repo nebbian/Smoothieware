@@ -193,10 +193,25 @@ void StepTicker::step_tick (void)
             }
         }
 
+
+        if((current_block->tick_info[m].steps_per_tick <= 0) && (motor[m]->get_pressure_advance() != 0.0f)) {
+            motor[m]->set_direction(!current_block->direction_bits[m]);
+            current_block->tick_info[m].steps_per_tick = 0 - current_block->tick_info[m].steps_per_tick;
+        }
+
         // protect against rounding errors and such
         if(current_block->tick_info[m].steps_per_tick <= 0) {
-            current_block->tick_info[m].counter = STEPTICKER_FPSCALE; // we force completion this step by setting to 1.0
-            current_block->tick_info[m].steps_per_tick = 0;
+
+            // reverse the direction if required
+            if(motor[m]->get_pressure_advance() != 0.0f) {
+                motor[m]->set_direction(!current_block->direction_bits[m]);
+                current_block->tick_info[m].steps_per_tick = 0 - current_block->tick_info[m].steps_per_tick;
+
+            } else {
+                // protect against rounding errors
+                current_block->tick_info[m].counter = STEPTICKER_FPSCALE; // we force completion this step by setting to 1.0
+                current_block->tick_info[m].steps_per_tick = 0;
+            }
         }
 
         current_block->tick_info[m].counter += current_block->tick_info[m].steps_per_tick;
